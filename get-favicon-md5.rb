@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 require 'net/http'
 require 'digest/md5'
+require 'digest/sha2'
+
 require 'uri'
 
 threads = []
@@ -28,10 +30,12 @@ def get_favicon (myPage, limit = 5)
 	case resp
 		when Net::HTTPSuccess then
 			digest = Digest::MD5.hexdigest(resp.body)
-			# $stderr.print "MD5 #{myPage}: #{resp.message} (#{digest})\n"
+			shadigest =Digest::SHA512.hexdigest(resp.body)
+			# $stderr.print "Hash #{myPage}: #{resp.message} (#{digest} #{shadigest})\n"
 			rval[0]=1
 			rval[1]=myPage
 			rval[2]=digest
+			rval[3]=shadigest
 		when Net::HTTPRedirection then 
 			getreq=resp['location']
 			getreq=myPage+getreq if (not getreq.match('^http'))
@@ -54,7 +58,7 @@ while (str=gets)
 	if (t<maxthreads) then
 		threads << Thread.new(str) { |url|
 			out=get_favicon(url);
-			if (out[0]==1) then puts out[2]+","+out[1]; totalfavicons+=1; end
+			if (out[0]==1) then puts out[2]+","+out[3]+","+out[1]; totalfavicons+=1; end
 		}
 		t+=1
 	else
@@ -65,7 +69,7 @@ while (str=gets)
 				threads[i].join
 				threads[i]=Thread.new(str) { |url|
 					out=get_favicon(url);
-					if (out[0]==1) then puts out[2]+","+out[1]; totalfavicons+=1; end
+					if (out[0]==1) then puts out[2]+","+out[3]+","+out[1]; totalfavicons+=1; end
 				}
 				toexit=1
 				break	
